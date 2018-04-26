@@ -28,13 +28,14 @@ def rnd_interpretation(formula, nvars):
 		interpretation.append(random.choice(sign) + 'i')
 	return interpretation
 
-def satisfies(interpretation, formula):
+#def satisfies(interpretation, formula):
 
 
 def walksat(formula, assignment, nvars, max_tries = 1000, max_flips = 1000):
 	interpretation = []
 	for i in xrange(max_tries):
 		interpretation = rnd_interpretation(formula, nvars)
+		print interpretation
 		for j in xrange(max_flips):
 			if satisfies(interpretation,formula):
 				return interpretation
