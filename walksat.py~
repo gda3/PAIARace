@@ -21,20 +21,17 @@ def get_counter(formula) :
 				counter[literal] = 1
 	return counter
 
-def rnd_interpretation(formula, nvars):
-	sign = ['', '-']
-	interpretation = []
-	for i in xrange(nvars):
-		interpretation.append(random.choice(sign) + 'i')
-	return interpretation
+def rnd_interpretation(formula):
+	counter = get_counter(formula)
+	return random.choice(counter.keys())
 
 def satisfies(interpretation, formula):
 
 
-def walksat(formula, assignment, nvars, max_tries = 1000, max_flips = 1000):
+def walksat(formula, assignment, max_tries = 1000, max_flips = 1000):
 	interpretation = []
 	for i in xrange(max_tries):
-		interpretation = rnd_interpretation(formula, nvars)
+		interpretation = rnd_interpretation(formula)
 		for j in xrange(max_flips):
 			if satisfies(interpretation,formula):
 				return interpretation
@@ -45,10 +42,10 @@ def walksat(formula, assignment, nvars, max_tries = 1000, max_flips = 1000):
 
 def main() :
 	if len(sys.argv) != 2: 
-		print "Usage: "+ sys.argv[0] +" file.cnf" if "./" in sys.argv[0] else "Usage: ./"+ sys.argv[0] +" file.cnf"  
+		print "Usage: "+ sys.argv[0] +" file.cnf"
 		return None
 	formula, nvars = parse( sys.argv[1] )
-	solution = walksat( formula, [], nvars )
+	solution = walksat( formula, [] )
 	if solution :
 		solution += [ x for x in range( 1, nvars+1 ) if x not in solution and -x not in solution ]
 		solution.sort( key = lambda x : abs(x) )
