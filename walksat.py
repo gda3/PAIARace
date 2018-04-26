@@ -21,24 +21,36 @@ def get_counter(formula) :
 				counter[literal] = 1
 	return counter
 
-def rnd_interpretation(formula, nvars):
-	sign = ['', '-']
+def rnd_interpretation(formula, nvars, prob = 0.5):
 	interpretation = []
-	for i in xrange(nvars):
-		interpretation.append(random.choice(sign) + 'i')
+	for var in xrange(1, nvars + 1):
+		if random.random() < prob: interpretation.append(var * -1)
+		else: interpretation.append(var)
 	return interpretation
 
-#def satisfies(interpretation, formula):
+def satisfies(interpretation, formula):
+	length = len(formula)
+	for clause in formula:
+		for literal in clause:
+			if literal == interpretation[abs(literal) - 1]:
+				break
+			else:
+				length -= 1
+		if length == 0: # Falsified clause
+			return False
+	return True
 
 
 def walksat(formula, assignment, nvars, max_tries = 1000, max_flips = 1000):
 	interpretation = []
 	for i in xrange(max_tries):
 		interpretation = rnd_interpretation(formula, nvars)
+		print formula
 		print interpretation
 		for j in xrange(max_flips):
 			if satisfies(interpretation,formula):
 				return interpretation
+		return 0
 
 	
 	return "No solution found"		
