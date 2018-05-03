@@ -45,20 +45,18 @@ def satisfies(interpretation, formula):
 			unsat_clauses.append(clause)
 	return boolean
 
-def set_of_variables_clause(C):
-	S = []
-	for literal in C:
-		S.append(C)
 
 def walksat(formula, nvars, max_tries = 10, max_flips = 10):
 	interpretation = []
 	C = []
+	S = []
 	for i in xrange(max_tries):
 		interpretation = rnd_interpretation(formula, nvars)
 		for j in xrange(max_flips):
 			if satisfies(interpretation,formula):
 				return interpretation
-			#C = random.choice(unsat_clauses)
+			C = random.choice(unsat_clauses)
+			S = list(C)
 			# S <- set of variables that appear in C
 			# b <- min({broken(p,F,I) | p in S})
 			# if b > 0 and with probability w then
