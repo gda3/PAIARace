@@ -28,31 +28,39 @@ def rnd_interpretation(formula, nvars, prob = 0.5):
 		else: interpretation.append(var)
 	return interpretation
 
+unsat_clauses = []
+
 def satisfies(interpretation, formula):
-	length = len(formula)
+	del unsat_clauses[:] # Empties the list
+	boolean = False
 	for clause in formula:
+		length = len(clause)
 		for literal in clause:
 			if literal == interpretation[abs(literal) - 1]:
 				break
 			else:
 				length -= 1
 		if length == 0: # Falsified clause
-			return False
-	return True
+			boolean = False
+			unsat_clauses.append(clause)
+	return boolean
 
-
-def walksat(formula, assignment, nvars, max_tries = 1000, max_flips = 1000):
+def walksat(formula, nvars, max_tries = 10, max_flips = 10):
 	interpretation = []
+	C = []
 	for i in xrange(max_tries):
 		interpretation = rnd_interpretation(formula, nvars)
-		print formula
-		print interpretation
 		for j in xrange(max_flips):
 			if satisfies(interpretation,formula):
 				return interpretation
-		return 0
-
-	
+			#C = random.choice(unsat_clauses)
+			# S <- set of variables that appear in C
+			# b <- min({broken(p,F,I) | p in S})
+			# if b > 0 and with probability w then
+			# 	p <- a variable of S
+			# else
+			# 	p <- a variable of S s.t. broken(p,F,I) = b
+			# I <- I with the value of p flipped	
 	return "No solution found"		
 
 
@@ -61,8 +69,8 @@ def main() :
 		print "Usage: "+ sys.argv[0] +" file.cnf" if "./" in sys.argv[0] else "Usage: ./"+ sys.argv[0] +" file.cnf"  
 		return None
 	formula, nvars = parse( sys.argv[1] )
-	solution = walksat( formula, [], nvars )
-	if solution :
+	solution = walksat( formula, nvars )
+	if type(solution) == list :
 		solution += [ x for x in range( 1, nvars+1 ) if x not in solution and -x not in solution ]
 		solution.sort( key = lambda x : abs(x) )
 		print 's SATISFIABLE'
