@@ -45,6 +45,11 @@ def satisfies(interpretation, formula):
 			unsat_clauses.append(clause)
 	return boolean
 
+def set_of_variables_clause(C):
+	S = []
+	for literal in C:
+		S.append(C)
+
 def walksat(formula, nvars, max_tries = 10, max_flips = 10):
 	interpretation = []
 	C = []
@@ -60,13 +65,13 @@ def walksat(formula, nvars, max_tries = 10, max_flips = 10):
 			# 	p <- a variable of S
 			# else
 			# 	p <- a variable of S s.t. broken(p,F,I) = b
-			# I <- I with the value of p flipped	
-	return "No solution found"		
+			# I <- I with the value of p flipped
+	return "No solution found"
 
 
 def main() :
-	if len(sys.argv) != 2: 
-		print "Usage: "+ sys.argv[0] +" file.cnf" if "./" in sys.argv[0] else "Usage: ./"+ sys.argv[0] +" file.cnf"  
+	if len(sys.argv) != 2:
+		print "Usage: "+ sys.argv[0] +" file.cnf" if "./" in sys.argv[0] else "Usage: ./"+ sys.argv[0] +" file.cnf"
 		return None
 	formula, nvars = parse( sys.argv[1] )
 	solution = walksat( formula, nvars )
