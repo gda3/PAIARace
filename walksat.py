@@ -32,7 +32,7 @@ unsat_clauses = []
 
 def satisfies(interpretation, formula):
 	del unsat_clauses[:] # Empties the list
-	boolean = False
+	boolean = True
 	for clause in formula:
 		length = len(clause)
 		for literal in clause:
@@ -45,11 +45,32 @@ def satisfies(interpretation, formula):
 			unsat_clauses.append(clause)
 	return boolean
 
+def unsatisfies(copy_i, formula):
+	num_unsat_clauses = 0
+	for clause in formula:
+		if clause not in unsat_clauses:
+			length = len(clause)
+			for literal in clause:
+				if literal == copy_i[abs(literal) - 1]:
+					break
+				else:
+					length -= 1
+			if length == 0: # Falsified clause
+				num_unsat_clauses += 1
+	return num_unsat_clauses
+
+def broken_clauses(S, formula, interpretation):
+	broken_clauses = []
+	copy_i = list(interpretation)
+	for literal in S:
+		copy_i[abs(literal - 1)] = literal
+		if not satisfies():
+	return broken_clauses
 
 def walksat(formula, nvars, max_tries = 10, max_flips = 10):
 	interpretation = []
 	C = []
-	S = []
+	global S = []
 	for i in xrange(max_tries):
 		interpretation = rnd_interpretation(formula, nvars)
 		for j in xrange(max_flips):
@@ -59,6 +80,7 @@ def walksat(formula, nvars, max_tries = 10, max_flips = 10):
 			S = list(C)
 			# S <- set of variables that appear in C
 			# b <- min({broken(p,F,I) | p in S})
+			broken_clauses(S, formula, interpretation)
 			# if b > 0 and with probability w then
 			# 	p <- a variable of S
 			# else
