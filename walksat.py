@@ -60,32 +60,36 @@ def unsatisfies(copy_i, formula):
 	return num_unsat_clauses
 
 def broken_clauses(S, formula, interpretation):
-	broken_clauses = []
-	copy_i = list(interpretation)
+	broken_clauses = [sys.maxint] * len(interpretation)
 	for literal in S:
-		copy_i[abs(literal - 1)] = literal
-		if not satisfies():
+		copy_i = list(interpretation) # copy_i is a copy of the interpretation
+		copy_i[abs(literal) - 1] = literal
+		broken_clauses[abs(literal) - 1] = (unsatisfies(copy_i, formula))
 	return broken_clauses
 
-def walksat(formula, nvars, max_tries = 10, max_flips = 10):
+def walksat(formula, nvars, max_tries = 10, max_flips = 10, w = 0.5):
 	interpretation = []
 	C = []
-	global S = []
+	S = []
 	for i in xrange(max_tries):
 		interpretation = rnd_interpretation(formula, nvars)
 		for j in xrange(max_flips):
 			if satisfies(interpretation,formula):
 				return interpretation
 			C = random.choice(unsat_clauses)
-			S = list(C)
 			# S <- set of variables that appear in C
+			S = list(C)
 			# b <- min({broken(p,F,I) | p in S})
-			broken_clauses(S, formula, interpretation)
-			# if b > 0 and with probability w then
+			bc = broken_clauses(S, formula, interpretation)
+			b = min(bc)
+			if b > 0 and random.random() > w:
 			# 	p <- a variable of S
-			# else
+				p = random.choice(S)
+			else:
 			# 	p <- a variable of S s.t. broken(p,F,I) = b
+				p = bc.index(b) + 1
 			# I <- I with the value of p flipped
+			interpretation[p - 1] = -interpretation[p - 1]
 	return "No solution found"
 
 
