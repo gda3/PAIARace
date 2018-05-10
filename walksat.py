@@ -67,13 +67,13 @@ def broken_clauses(S, formula, interpretation):
 		broken_clauses[abs(literal) - 1] = (unsatisfies(copy_i, formula))
 	return broken_clauses
 
-def walksat(formula, nvars, max_tries = 10, max_flips = 10, w = 0.5):
+def walksat(formula, nvars, max_tries = 10000000, max_flips = 10, w = 0.5):
 	interpretation = []
 	C = []
 	S = []
 	for i in xrange(max_tries):
 		interpretation = rnd_interpretation(formula, nvars)
-		for j in xrange(max_flips):
+		for j in xrange(nvars * 2):
 			if satisfies(interpretation,formula):
 				return interpretation
 			C = random.choice(unsat_clauses)
@@ -89,7 +89,7 @@ def walksat(formula, nvars, max_tries = 10, max_flips = 10, w = 0.5):
 			# 	p <- a variable of S s.t. broken(p,F,I) = b
 				p = bc.index(b) + 1
 			# I <- I with the value of p flipped
-			interpretation[p - 1] = -interpretation[p - 1]
+			interpretation[abs(p) - 1] = -interpretation[abs(p) - 1]
 	return "No solution found"
 
 
@@ -105,6 +105,7 @@ def main() :
 		print 's SATISFIABLE'
 		print 'v ' + ' '.join( [ str(x) for x in solution ] ) + ' 0'
 	else :
+		# !!!!!!!!!!!!!!!!!!!!!!!!!!!
 		print 's UNSATISFIABLE'
 
 
