@@ -1,15 +1,35 @@
 #!/usr/bin/python
 import sys, random, operator
 
+
+positive_positions = []
+negative_positions = []
+unsat_clauses = []
+unsat_lits = []
+len_clauses = []
+
 def parse(filename) :
 	formula = []
+	clause_position = 0
 	for line in open( filename ) :
 		if line.startswith( 'c' ) : continue
 		if line.startswith( 'p' ) :
 			nvars, nclauses = line.split()[2:4]
+			for x in xrange(int(nvars)):
+				positive_positions.append([])
+				negative_positions.append([])
+			unsat_lits = [0] * int(nclauses)
 			continue
 		clause = [ int(x) for x in line[:-2].split() ]
 		formula.append(clause)
+		len_clauses.append(len(clause))
+		for literal in clause:
+			if literal < 0:
+				negative_positions[abs(literal) - 1].append(clause_position)
+				
+			else:
+				positive_positions[literal - 1].append(clause_position)
+		clause_position += 1
 	return formula, int(nvars)
 
 def get_counter(formula) :
@@ -28,8 +48,6 @@ def rnd_interpretation(formula, nvars, prob = 0.5):
 		if random.random() < prob: interpretation.append(var * -1)
 		else: interpretation.append(var)
 	return interpretation
-
-unsat_clauses = []
 
 def satisfies(interpretation, formula):
 	del unsat_clauses[:] # Empties the list
@@ -60,12 +78,26 @@ def unsatisfies(copy_i, formula):
 				num_unsat_clauses += 1
 	return num_unsat_clauses
 
-def broken_clauses(S, formula, interpretation):
+def update_unsat_lits(interpretation):
+	for literal in interpretation:
+		if literal < 0:
+			for pos in positive_positions[abs(literal) - 1]:
+				unsat_lits[pos] += 1
+		else:
+			for pos in negative_positions[literal - 1]:	
+				unsat_lits[pos] += 1
+
+def broken_clauses(S, interpretation):
 	broken_clauses = [sys.maxint] * len(interpretation)
 	for literal in S:
-		copy_i = list(interpretation) # copy_i is a copy of the interpretation
-		copy_i[abs(literal) - 1] = literal
-		broken_clauses[abs(literal) - 1] = (unsatisfies(copy_i, formula))
+		if literal < 0:
+			for pos in positive_positions[abs(literal) - 1]:
+				if unsat_lits[pos] + 1 == len_clauses[pos]:
+					broken_clauses[abs(literal) - 1] += 1
+		else:
+			for pos in negative_positions[literal - 1]:
+				if unsat_lits[pos] + 1 == len_clauses[pos]:
+					broken_clauses[literal - 1] += 1
 	return broken_clauses
 
 def walksat(formula, nvars, max_tries = sys.maxint, max_flips = 10, w = 0.5):
@@ -81,7 +113,8 @@ def walksat(formula, nvars, max_tries = sys.maxint, max_flips = 10, w = 0.5):
 			# S <- set of variables that appear in C
 			S = list(C)
 			# b <- min({broken(p,F,I) | p in S})
-			bc = broken_clauses(S, formula, interpretation)
+			update_unsat_lits(interpretation)
+			bc = broken_clauses(S, interpretation)
 			b = min(bc)
 			if b > 0 and random.random() > w:
 			# 	p <- a variable of S
