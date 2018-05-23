@@ -1,26 +1,33 @@
 #!/usr/bin/python
 import sys, random, operator
 
+positive_positions = []
+negative_positions = []
+unsat_clauses = []
+
 def parse(filename) :
 	formula = []
+	unsat_lits = []
+	clause_position = 0
 	for line in open( filename ) :
 		if line.startswith( 'c' ) : continue
 		if line.startswith( 'p' ) :
 			nvars, nclauses = line.split()[2:4]
+			for x in xrange(int(nvars)):
+				positive_positions.append([])
+				negative_positions.append([])
+			sat_lits = [3] * int(nclauses)
 			continue
 		clause = [ int(x) for x in line[:-2].split() ]
 		formula.append(clause)
-	return formula, int(nvars)
+		for literal in clause:
+			if literal < 0:
+				negative_positions[abs(literal) - 1].append(clause_position)
 
-def get_counter(formula) :
-	counter = {}
-	for clause in formula :
-		for literal in clause :
-			if literal in counter :
-				counter[literal] += 1
-			else :
-				counter[literal] = 1
-	return counter
+			else:
+				positive_positions[literal - 1].append(clause_position)
+		clause_position += 1
+	return formula, int(nvars), sat_lits, int(nclauses)
 
 def rnd_interpretation(formula, nvars, prob = 0.5):
 	interpretation = []
@@ -29,59 +36,50 @@ def rnd_interpretation(formula, nvars, prob = 0.5):
 		else: interpretation.append(var)
 	return interpretation
 
-unsat_clauses = []
+def satisfies(formula, sat_lits, unsat_clauses):
+	unsat_clauses = [formula[pos] for pos, n in enumerate(sat_lits) if n == 0]
+	return (False, unsat_clauses) if unsat_clauses else (True, unsat_clauses)
 
-def satisfies(interpretation, formula):
-	del unsat_clauses[:] # Empties the list
-	boolean = True
-	for clause in formula:
-		length = len(clause)
-		for literal in clause:
-			if literal == interpretation[abs(literal) - 1]:
-				break
-			else:
-				length -= 1
-		if length == 0: # Falsified clause
-			boolean = False
-			unsat_clauses.append(clause)
-	return boolean
+def update_sat_lits(interpretation, sat_lits, nclauses):
+	sat_lits = [3] * nclauses
+	for literal in interpretation:
+		if literal < 0:
+			for pos in positive_positions[abs(literal) - 1]:
+				sat_lits[pos] -= 1
+		else:
+			for pos in negative_positions[literal - 1]:
+				sat_lits[pos] -= 1
+	return sat_lits
 
-def unsatisfies(copy_i, formula):
-	num_unsat_clauses = 0
-	for clause in formula:
-		if clause not in unsat_clauses:
-			length = len(clause)
-			for literal in clause:
-				if literal == copy_i[abs(literal) - 1]:
-					break
-				else:
-					length -= 1
-			if length == 0: # Falsified clause
-				num_unsat_clauses += 1
-	return num_unsat_clauses
-
-def broken_clauses(S, formula, interpretation):
-	broken_clauses = [sys.maxint] * len(interpretation)
+def broken_clauses(S, nvars, sat_lits, nclauses):
+	broken_clauses = [nclauses] * nvars
 	for literal in S:
-		copy_i = list(interpretation) # copy_i is a copy of the interpretation
-		copy_i[abs(literal) - 1] = literal
-		broken_clauses[abs(literal) - 1] = (unsatisfies(copy_i, formula))
+		if literal < 0:
+			for pos in positive_positions[abs(literal) - 1]:
+				if sat_lits[pos] - 1 == 0:
+					broken_clauses[abs(literal) - 1] += 1
+		else:
+			for pos in negative_positions[literal - 1]:
+				if sat_lits[pos] - 1 == 0:
+					broken_clauses[literal - 1] += 1
 	return broken_clauses
 
-def walksat(formula, nvars, max_tries = sys.maxint, max_flips = 10, w = 0.5):
+def walksat(formula, nvars, sat_lits, nclauses, max_tries = sys.maxint, max_flips = 10, w = 0.5):
 	interpretation = []
 	C = []
 	S = []
+	unsat_clauses = []
 	for i in xrange(max_tries):
 		interpretation = rnd_interpretation(formula, nvars)
 		for j in xrange(nvars * 2):
-			if satisfies(interpretation,formula):
-				return interpretation
+			sat_lits = update_sat_lits(interpretation, sat_lits, nclauses)
+			satisfiable, unsat_clauses = satisfies(formula, sat_lits, unsat_clauses)
+			if satisfiable: return interpretation
 			C = random.choice(unsat_clauses)
 			# S <- set of variables that appear in C
 			S = list(C)
 			# b <- min({broken(p,F,I) | p in S})
-			bc = broken_clauses(S, formula, interpretation)
+			bc = broken_clauses(S, nvars, sat_lits, nclauses)
 			b = min(bc)
 			if b > 0 and random.random() > w:
 			# 	p <- a variable of S
@@ -98,8 +96,8 @@ def main() :
 	if len(sys.argv) != 2:
 		print "Usage: "+ sys.argv[0] +" file.cnf" if "./" in sys.argv[0] else "Usage: ./"+ sys.argv[0] +" file.cnf"
 		return None
-	formula, nvars = parse( sys.argv[1] )
-	solution = walksat( formula, nvars )
+	formula, nvars, sat_lits, nclauses = parse( sys.argv[1] )
+	solution = walksat( formula, nvars, sat_lits, nclauses )
 	if type(solution) == list :
 		solution += [ x for x in range( 1, nvars+1 ) if x not in solution and -x not in solution ]
 		solution.sort( key = lambda x : abs(x) )
